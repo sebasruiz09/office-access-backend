@@ -1,0 +1,7 @@
+services:
+  mysql:
+    ports: []
+  backend:
+    ports: []
+  frontend:
+    ports: []
