@@ -19,14 +19,14 @@ pipeline {
 
         stage('Construir contenedores') {
             steps {
-                sh 'docker-compose build'
+                sh 'docker-compose -p ci build'
             }
         }
 
         stage('Ejecutar pruebas unitarias con coverage') {
             steps {
                 sh '''
-                    docker-compose run --rm backend \
+                    docker-compose -p ci run --rm backend \
                     pytest -v \
                         --cov=backend \
                         --cov-branch \
@@ -39,10 +39,7 @@ pipeline {
         stage('Copiar coverage.xml fuera del contenedor') {
             steps {
                 sh '''
-                    container=$(docker ps -aqf "ancestor=office-access-backend-backend")
-                    if [ -z "$container" ]; then
-                        container=$(docker ps -aqf "name=office-access-backend")
-                    fi
+                    container=$(docker ps -aqf "name=ci_backend")
                     docker cp $container:/app/coverage.xml ./coverage.xml
                 '''
             }
@@ -66,7 +63,7 @@ pipeline {
                 expression { currentBuild.currentResult == 'SUCCESS' }
             }
             steps {
-                sh 'docker-compose up -d'
+                sh 'docker-compose -p ci up -d'
             }
         }
     }
@@ -74,8 +71,9 @@ pipeline {
     post {
         always {
             sh """
-                docker-compose down --volumes --remove-orphans || true
+                docker-compose -p ci down --volumes --remove-orphans || true
             """
         }
     }
 }
+
