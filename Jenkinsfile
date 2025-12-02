@@ -41,7 +41,7 @@ pipeline {
                 sh '''
                     container=$(docker ps -aqf "ancestor=office-access-backend-backend")
                     if [ -z "$container" ]; then
-                        container=$(docker ps -aqf "name=backend")
+                        container=$(docker ps -aqf "name=office-access-backend")
                     fi
                     docker cp $container:/app/coverage.xml ./coverage.xml
                 '''
@@ -73,5 +73,9 @@ pipeline {
 
     post {
         always {
-            sh 'docker-compose down --volumes --remove-orphans ||
-
+            sh """
+                docker-compose down --volumes --remove-orphans || true
+            """
+        }
+    }
+}
