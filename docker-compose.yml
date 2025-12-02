@@ -1,7 +1,6 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: office-access-mysql
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
@@ -21,7 +20,6 @@ services:
 
   backend:
     build: ./backend
-    container_name: office-access-backend
     restart: always
     working_dir: /app
     volumes:
@@ -29,7 +27,7 @@ services:
     ports:
       - "5000:5000"
     environment:
-      DB_HOST: office-access-mysql
+      DB_HOST: mysql
       DB_USER: pythonUser
       DB_PASSWORD: python1234
       DB_NAME: VISIT_REGISTRY_DB
@@ -42,7 +40,6 @@ services:
 
   frontend:
     image: nginx:alpine
-    container_name: visitante-frontend
     restart: unless-stopped
     depends_on:
       - backend
