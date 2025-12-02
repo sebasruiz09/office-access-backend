@@ -11,8 +11,8 @@ pipeline {
         stage('Verificar dependencias') {
             steps {
                 sh '''
-                    docker version
-                    docker-compose version
+                    docker --version
+                    docker-compose --version
                 '''
             }
         }
@@ -23,12 +23,27 @@ pipeline {
             }
         }
 
-        stage('Ejecutar pruebas unitarias') {
+        stage('Ejecutar pruebas unitarias con coverage') {
             steps {
                 sh '''
                     docker-compose run --rm backend \
-                    pytest -v --cov=app --cov-branch \
-                    --cov-report=xml --cov-report=term-missing
+                    pytest -v \
+                        --cov=backend \
+                        --cov-branch \
+                        --cov-report=xml:/app/coverage.xml \
+                        --cov-report=term-missing
+                '''
+            }
+        }
+
+        stage('Copiar coverage.xml fuera del contenedor') {
+            steps {
+                sh '''
+                    container=$(docker ps -aqf "ancestor=office-access-backend-backend")
+                    if [ -z "$container" ]; then
+                        container=$(docker ps -aqf "name=backend")
+                    fi
+                    docker cp $container:/app/coverage.xml ./coverage.xml
                 '''
             }
         }
@@ -41,10 +56,7 @@ pipeline {
                 sh '''
                     curl -Os https://cli.codecov.io/latest/linux/codecov
                     chmod +x codecov
-
-                    ./codecov upload-process \
-                        -f backend/coverage.xml \
-                        -t "$CODECOV_TOKEN"
+                    ./codecov upload-process -f coverage.xml -t "$CODECOV_TOKEN"
                 '''
             }
         }
@@ -61,8 +73,5 @@ pipeline {
 
     post {
         always {
-            sh 'docker-compose down --volumes --remove-orphans || true'
-            echo 'Pipeline terminado'
-        }
-    }
-}
+            sh 'docker-compose down --volumes --remove-orphans ||
+
